@@ -13,4 +13,10 @@ stock recommendation engine based on all my stonk data.
 * subjectivity
 * senitment
 * company (boolean)
-* 
+* category
+  * useless
+  * unrelated
+  * maybe
+  * useful
+  * excellent
+  * expeditious
