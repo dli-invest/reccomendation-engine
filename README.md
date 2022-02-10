@@ -20,3 +20,6 @@ stock recommendation engine based on all my stonk data.
   * useful
   * excellent
   * expeditious
+
+
+Rename to classify engine to classify news items as they come in
