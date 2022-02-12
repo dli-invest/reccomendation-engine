@@ -4,10 +4,6 @@ import {
   validateRequest,
 } from "https://deno.land/x/sift@0.4.3/mod.ts";
 
-import { dotEnvConfig } from './deps.ts';
- 
-console.log(dotEnvConfig({ export: true }));
-
 serve({
   "/articles": handleArticles,
 });
