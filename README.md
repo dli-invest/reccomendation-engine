@@ -2,6 +2,10 @@
 stock recommendation engine based on all my stonk data.
 
 
+```js
+/home/codespace/.deno/bin/deno run --allow-env --allow-net --allow-read fauna.ts
+```
+
 ## Fields
 
 * source (dli_invest)
@@ -22,4 +26,30 @@ stock recommendation engine based on all my stonk data.
   * expeditious
 
 
-Rename to classify engine to classify news items as they come in
+Rename to classify engine to classify news items as they come in.
+
+## Graph ql structure
+
+```gql
+type Field {
+  name: String!
+  value: String!
+  article: [Article!] @relation(name: "article")
+} 
+
+type Article {
+  source: String!
+  country: String!
+  exchange: String!
+  description: String!
+  author: String!
+  url: String!
+  company: String!
+  fields: [Field!] @relation(name: "fields")
+}
+
+
+type Query {
+  allArticles: [Article!]
+}
+```
