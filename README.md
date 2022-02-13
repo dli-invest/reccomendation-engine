@@ -1,6 +1,7 @@
 # reccomendation-engine
 stock recommendation engine based on all my stonk data.
 
+fauna db is the file that stores all the ai data coming from my cron jobs (thanks github actions)
 
 ```js
 /home/codespace/.deno/bin/deno run --allow-env --allow-net --allow-read fauna.ts
