@@ -1,2 +1,3 @@
 faunadb
 requests
+pandas
