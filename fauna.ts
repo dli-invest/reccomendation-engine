@@ -9,14 +9,14 @@ serve({
 });
 
 interface ArticleData {
-  source?: String
-  country?: String
-  exchange?: String
-  title?: String
-  description?: String
-  author?: String
-  url?: String
-  company?: String
+  source?: string
+  country?: string
+  exchange?: string
+  title?: string
+  description?: string
+  author?: string
+  url?: string
+  company?: string
 }
 
 interface FaunaArticleResp extends Partial<ArticleData> {
@@ -40,12 +40,22 @@ async function handleArticles(request: Request) {
   
   // Handle POST requests.
   if (request.method === "POST") {
-    const { url, author, source, description, title, errors } = await createQuote(
+    // make sure the article doesnt already exists
+    const {url: incomingUrl = ""} = body as ArticleData;
+    if (incomingUrl) {
+      const articlesData = await getArticleByUrl(incomingUrl)
+      console.log(articlesData)
+      if (articlesData?.articles && articlesData?.articles?.length > 0) {
+        return json({ warning: "article already exists" }, { status: 200 });
+      }
+    }
+    // getArticleByUrl
+    const { url, author, source, description, title, errors } = await createArticle(
       body as ArticleData,
     );
     if (errors) {
       console.error(errors.map((error) => error.message).join("\n"));
-      return json({ error: "couldn't create the quote" }, { status: 500 });
+      return json({ error: "couldnt create the article" }, { status: 500 });
     }
 
     return json({ url, source, description, title, author }, { status: 201 });
@@ -56,18 +66,18 @@ async function handleArticles(request: Request) {
     const u = new URL(request.url);
     const size = u.searchParams.get('size');
     const cursor = u.searchParams.get('cursor');
-    let quotes, errors;
+    let articleData, errors;
     if (size) {
       const articles = await getArticles(size, "");
-      quotes = articles.quotes;
+      articleData = articles.articles;
       errors = articles.errors;
     } else if(size && cursor) {
       const articles = await getArticles(size, cursor);
-      quotes = articles.quotes;
+      articleData = articles.articles;
       errors = articles.errors;
     } else {
       const articles = await getArticles();
-      quotes = articles.quotes;
+      articleData = articles.articles;
       errors = articles.errors;
     }
     if (errors) {
@@ -75,10 +85,35 @@ async function handleArticles(request: Request) {
       return json({ error: "couldn't fetch the quotes" }, { status: 500 });
     }
 
-    return json({ quotes });
+    return json({ articles: articleData });
   }
 }
 
+async function getArticleByUrl(url: string) {
+  let query = `
+    query($url: String!) {
+      getArticleByUrl(url: $url) {
+        data {
+          url
+          source
+          title
+          description
+        }
+      }
+    }
+  `
+
+  const { data, errors } = await queryFauna(query, {url});
+  if (errors) {
+    return { errors };
+  }
+
+  const {
+    getArticleByUrl: { data: articles },
+  } = data as { getArticleByUrl: { data: Partial<ArticleData>[] } };
+
+  return { articles };
+}
 /** Get all quotes available in the database. */
 async function getArticles(size: number | string = 0, cursor = "") {
   let query = "";
@@ -146,14 +181,14 @@ async function getArticles(size: number | string = 0, cursor = "") {
   }
 
   const {
-    allArticles: { data: quotes },
+    allArticles: { data: articles },
   } = data as { allArticles: { data: Partial<ArticleData>[] } };
 
-  return { quotes };
+  return { articles };
 }
 
 /** Create a new quote in the database. */
-async function createQuote({
+async function createArticle({
   source,
   country,
   exchange,
