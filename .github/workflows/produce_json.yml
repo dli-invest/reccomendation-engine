@@ -9,7 +9,7 @@ on:
       - ".github/workflows/*.yml"
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron:  '10 */1 * * *'
+    - cron:  '10 5 1/10 * *'
 
 env:
   FAUNA_URL: ${{ secrets.FAUNA_AI_TRAINING_DATA_URL }}
