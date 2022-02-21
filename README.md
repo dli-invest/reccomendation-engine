@@ -31,6 +31,8 @@ Rename to classify engine to classify news items as they come in.
 
 ## Graph ql structure
 
+Sample graphql structure 
+
 ```gql
 type Field {
   name: String!
@@ -54,3 +56,5 @@ type Query {
   allArticles: [Article!]
 }
 ```
+
+
