@@ -1,3 +1,4 @@
 faunadb
 requests
 pandas
+spacy
