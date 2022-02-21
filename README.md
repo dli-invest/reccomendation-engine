@@ -18,7 +18,7 @@ fauna db is the file that stores all the ai data coming from my cron jobs (thank
 * subjectivity
 * senitment
 * company (boolean)
-* category
+* category (0-10)
   * useless
   * unrelated
   * maybe
@@ -28,6 +28,39 @@ fauna db is the file that stores all the ai data coming from my cron jobs (thank
 
 
 Rename to classify engine to classify news items as they come in.
+
+
+## Autoclassify logic
+
+Purge documents that are not interesting to me, logic.
+
+Typical Tasks is 5, anything exciting is rated from 6 to 10
+
+Dividends - 3
+Earnings - 5
+Rest - 0
+Motley Fool, Zacks, Simply Wall Street - 2
+Bloomberg - 3
+Extension to File Form - 4
+Earnings Call Transcript - 5
+initial public offer - 2 or 3
+private placement - 2
+made an offer, acquisiton - 5
+Beat Analyst Forecasts - 3
+termination, bid together
+rate hikes & fed 7
+S&P 500
+Any tickers gives 1 point automatically
+People like elon musk and nhtsa
+Supply Chain
+Federal Trade Commission
+CNW Group
+
+Extract first few words with -
+number with deal.
+
+
+Any numbers above 0.9 in subjectivity, or senitment
 
 ## Graph ql structure
 
