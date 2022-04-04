@@ -12,7 +12,7 @@ on:
     - cron:  '10 2-18/2 * * 1-5'
 
 env:
-  FAUNA_URL: ${{ secrets.FAUNA_AI_TRAINING_DATA_URL }}
+  FAUNA_SECRET: ${{ secrets.FAUNA_AI_TRAINING_DATA_URL }}
   DISCORD_WEBHOOK: ${{ secrets.DISCORD_DAILY_REVIEW_WEBHOOK }}
 # Add cron job to ensure external webpages + apis have no changed
 jobs:
