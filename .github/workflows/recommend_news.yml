@@ -14,6 +14,7 @@ on:
 env:
   FAUNA_SECRET: ${{ secrets.FAUNA_AI_ACCESS_TOKEN }}
   DISCORD_WEBHOOK: ${{ secrets.DISCORD_DAILY_REVIEW_WEBHOOK }}
+  DISCORD_CRITICAL_WEBHOOK: ${{ secrets.DISCORD_CRITICAL_WEBHOOK }}
 # Add cron job to ensure external webpages + apis have no changed
 jobs:
   scrap_data:

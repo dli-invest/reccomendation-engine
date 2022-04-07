@@ -8,6 +8,11 @@ import os
 import json
 import time
 import requests
+from spacytextblob.spacytextblob import SpacyTextBlob
+import dateparser
+import spacy
+import re
+
 from datetime import datetime, timedelta
 from faunadb import client, query as q
 # read in csv file with key ratios from https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv
@@ -15,9 +20,9 @@ from faunadb import client, query as q
 # TODO add unit testing when it makes sense
 # and we have seen the performance of this function
 # https://raw.githubusercontent.com/dli-invest/eod_tickers/main/data/us_stock_data.csv
-def get_cheap_stocks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", priceToBook: int = 1, peRatio: int =  3, csv_type: str = "cad_tickers"):
+def get_cheap_stocks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", priceToBook: int = 10, peRatio: int =  10, csv_type: str = "cad_tickers"):
     stock_df = pd.read_csv(csv_url)
-    cheapStocks = stock_df[(stock_df["priceToBook"] < priceToBook) & (stock_df["peRatio"] < peRatio)]
+    cheapStocks = stock_df[(stock_df["priceToBook"] < priceToBook) & (stock_df["peRatio"] < peRatio) & stock_df["priceToBook"] > 0 & stock_df["peRatio"] > 0]
     return cheapStocks
 
 def get_row_for_stonk(stock_df: pd.DataFrame, symbol: str = "KGEIF:US", csv_type: str = "cad_tickers"):
@@ -132,14 +137,16 @@ def map_article_to_embed(fauna_item: dict, fields: List[dict] = [])-> dict:
         embed["fields"] = fields
     return embed
 
-def check_fauna_new_for_reccomendations(cfg: dict):
+def check_fauna_new_for_reccomendations(cfg: dict, fauna_news: List[dict] = []):
     """
         For fauna reccomendations I thought that scanning through the news with a recommendation engine would be a good idea, but have decided that going through news for "undervalued" companies is a much better idea and possibly in the future other metrics like small market cap.
     """
     discord_url = os.getenv("DISCORD_WEBHOOK")
     hour_diff = cfg.get("hour_diff", 2)
-    fauna_news = get_recent_fauna_news(hour_diff)
+    if len(fauna_news) == 0:
+        fauna_news = get_recent_fauna_news(hour_diff)
     subset_stock_df = get_cheap_stocks()
+    subset_stock_df = subset_stock_df[subset_stock_df["MarketCap"] <= 2E9]
     # iterate across fauna_news and check if the news is about a cheap stock
     embeds = []
     for item in fauna_news:
@@ -164,6 +171,7 @@ def check_fauna_new_for_reccomendations(cfg: dict):
         embeds.append(embed)
         if len(embeds) >= 6:
             data = {
+                "username": "reccomendation-engine/alerts",
                 "embeds": embeds
             }
             post_webhook_content(discord_url,  data)
@@ -171,13 +179,100 @@ def check_fauna_new_for_reccomendations(cfg: dict):
         # adjust company name to match the csv file
     if len(embeds) >= 1:
         data = {
+            "username": "reccomendation-engine/alerts",
             "embeds": embeds
         }
         post_webhook_content(discord_url,  data)
         embeds = []
 
+
+
+def check_for_earnings(items: List[dict]):
+    nlp = spacy.load("en_core_web_sm")
+    nlp.add_pipe("spacytextblob")
+    subset_stock_df = get_cheap_stocks()
+    embeds_to_sent = []
+    for item in items:
+        doc = nlp(item["data"]["title"])
+        extracted_date = None
+        extracted_title = item["data"]["title"]
+        multiword_list  = ["next week's", "simply wall", "three years", "zacks", "virtual investor conference", "motley fool", "roadshow series", "institutional investors conference", "speak at"]
+            # check if extracted_title has any substrings in multiword list
+        pattern = re.compile(r'\b(?:' + '|'.join(re.escape(s) for s in multiword_list) + r')\b')
+        matches = pattern.findall(extracted_title.lower())
+        if len(matches) > 0:
+            print(matches)
+            print(extracted_title)
+            continue
+        for ent in doc.ents:
+            # ignore "dates" if they can be parsed as a number
+            if ent.label_ == "DATE":
+                try:
+                    if ent.text.lower() in ["today", "tomorrow", "yesterday", "decade", "40-year", "friday", "thursday", "wednesday", "tuesday", "monday", "sunday", "saturday", "january", "February", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december", "last year", "next week's", "week", "-", "zacks", "roadshow", "participate", "convention"]:
+                        continue
+                    # check ent.text in multiword list contains
+                    num = int(ent.text, 10)
+
+                except ValueError as e:
+                    # print(e)
+                    # dont want the number to be parsed as a date
+                    extracted_date = dateparser.parse(ent.text)
+                    if extracted_date != None:
+                        if extracted_date.strftime('%Y-%m-%d') == datetime.now().strftime('%Y-%m-%d'):
+                            extracted_date = None
+                            continue
+                        break
+
+        if extracted_date != None:
+            # append to list of files to be sent
+            company = item.get("data").get("company")
+            if company is None:
+                continue
+            ticker = yahoo_ex_remove(company)
+            row = get_row_for_stonk(subset_stock_df, ticker)
+            if row.empty:
+                continue
+            # may want different fields here
+            fields = [{
+                "name": "priceToBook",
+                "value": str(row["priceToBook"].iloc[0]),
+                "inline": True
+            }, {
+                "name": "peRatio",
+                "value": str(row["peRatio"].iloc[0]),
+                "inline": True
+            }, {
+                "name": "marketCap",
+                "value": str(row["MarketCap"].iloc[0]),
+                "inline": True
+            }]
+            embed = map_article_to_embed(item, fields)
+            embeds_to_sent.append(embed)
+            extracted_date = None
+            # send to discord
+            if len(embeds_to_sent) >= 6:
+                data = {
+                    "username": "reccomendation-engine/earnings",
+                    "embeds": embeds_to_sent
+                }
+                discord_url = os.getenv("DISCORD_CRITICAL_WEBHOOK")
+                post_webhook_content(discord_url,  data)
+                embeds_to_sent = []
+            continue
+    if len(embeds_to_sent) > 0:
+        data = {
+            "username": "reccomendation-engine/earnings",
+            "embeds": embeds_to_sent
+        }
+        discord_url = os.getenv("DISCORD_CRITICAL_WEBHOOK")
+        post_webhook_content(discord_url,  data)
+        embeds_to_sent = [] 
+
 if __name__ == "__main__":
+    fauna_news = get_recent_fauna_news(2)
     check_fauna_new_for_reccomendations({
         "hour_diff": 2
-    })
+    }, fauna_news)
+
+    # check for earnings
 
