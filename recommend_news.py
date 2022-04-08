@@ -22,8 +22,9 @@ from faunadb import client, query as q
 # https://raw.githubusercontent.com/dli-invest/eod_tickers/main/data/us_stock_data.csv
 def get_cheap_stocks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", priceToBook: int = 10, peRatio: int =  10, csv_type: str = "cad_tickers"):
     stock_df = pd.read_csv(csv_url)
-    cheapStocks = stock_df[(stock_df["priceToBook"] < priceToBook) & (stock_df["peRatio"] < peRatio) & stock_df["priceToBook"] > 0 & stock_df["peRatio"] > 0]
-    return cheapStocks
+    cheap_stonks = stock_df[(stock_df["priceToBook"] < priceToBook) & (stock_df["peRatio"] < peRatio)]
+    cheap_stonks = cheap_stonks[(cheap_stonks["priceToBook"] > 0) & (cheap_stonks["peRatio"] > peRatio)]
+    return cheap_stonks
 
 def get_row_for_stonk(stock_df: pd.DataFrame, symbol: str = "KGEIF:US", csv_type: str = "cad_tickers"):
     kei_df = stock_df[stock_df["symbol"] == symbol]
