@@ -23,8 +23,14 @@ from faunadb import client, query as q
 def get_cheap_stocks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", priceToBook: int = 10, peRatio: int =  10, csv_type: str = "cad_tickers"):
     stock_df = pd.read_csv(csv_url)
     cheap_stonks = stock_df[(stock_df["priceToBook"] < priceToBook) & (stock_df["peRatio"] < peRatio)]
-    cheap_stonks = cheap_stonks[(cheap_stonks["priceToBook"] > 0) & (cheap_stonks["peRatio"] > peRatio)]
+    cheap_stonks = cheap_stonks[(cheap_stonks["priceToBook"] > -priceToBook) & (cheap_stonks["peRatio"] > peRatio)]
     return cheap_stonks
+
+# get stonks with low market cap
+def get_penny_stonks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", csv_type: str = "cad_tickers"):
+    stock_df = pd.read_csv(csv_url)
+    low_mc_df = stock_df[stock_df["MarketCap"] < 2E9]
+    return low_mc_df
 
 def get_row_for_stonk(stock_df: pd.DataFrame, symbol: str = "KGEIF:US", csv_type: str = "cad_tickers"):
     kei_df = stock_df[stock_df["symbol"] == symbol]
@@ -147,7 +153,9 @@ def check_fauna_new_for_reccomendations(cfg: dict, fauna_news: List[dict] = []):
     if len(fauna_news) == 0:
         fauna_news = get_recent_fauna_news(hour_diff)
     subset_stock_df = get_cheap_stocks()
-    subset_stock_df = subset_stock_df[subset_stock_df["MarketCap"] <= 2E9]
+    small_cap_stonks = get_penny_stonks()
+    # combine subset_stonk_df with small_cap_stonks and remove duplicates
+    subset_stonks = subset_stock_df.append(small_cap_stonks).drop_duplicates(subset=["symbol"])
     # iterate across fauna_news and check if the news is about a cheap stock
     embeds = []
     for item in fauna_news:
@@ -156,7 +164,7 @@ def check_fauna_new_for_reccomendations(cfg: dict, fauna_news: List[dict] = []):
         if company is None:
             continue
         ticker = yahoo_ex_remove(company)
-        row = get_row_for_stonk(subset_stock_df, ticker)
+        row = get_row_for_stonk(subset_stonks, ticker)
         if row.empty:
             continue
         fields = [{
