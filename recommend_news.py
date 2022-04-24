@@ -175,6 +175,10 @@ def check_fauna_new_for_reccomendations(cfg: dict, fauna_news: List[dict] = []):
             "name": "peRatio",
             "value": str(row["peRatio"].iloc[0]),
             "inline": True
+        }, {
+            "name": "marketCap",
+            "value": str(row["marketCap"].iloc[0]),
+            "inline": True
         }]
         embed = map_article_to_embed(item, fields)
         embeds.append(embed)
