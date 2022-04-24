@@ -29,7 +29,7 @@ def get_cheap_stocks(csv_url: str = "https://raw.githubusercontent.com/FriendlyU
 # get stonks with low market cap
 def get_penny_stonks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", csv_type: str = "cad_tickers"):
     stock_df = pd.read_csv(csv_url)
-    low_mc_df = stock_df[stock_df["MarketCap"] < 2E9]
+    low_mc_df = stock_df[stock_df["MarketCap"] < 2E8]
     return low_mc_df
 
 def get_row_for_stonk(stock_df: pd.DataFrame, symbol: str = "KGEIF:US", csv_type: str = "cad_tickers"):
