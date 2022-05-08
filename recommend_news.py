@@ -12,7 +12,8 @@ from spacytextblob.spacytextblob import SpacyTextBlob
 import dateparser
 import spacy
 import re
-
+import math
+from tqdm import tqdm
 from datetime import datetime, timedelta
 from faunadb import client, query as q
 # read in csv file with key ratios from https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv
@@ -20,21 +21,29 @@ from faunadb import client, query as q
 # TODO add unit testing when it makes sense
 # and we have seen the performance of this function
 # https://raw.githubusercontent.com/dli-invest/eod_tickers/main/data/us_stock_data.csv
-def get_cheap_stocks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", priceToBook: int = 10, peRatio: int =  10, csv_type: str = "cad_tickers"):
+def get_cheap_stocks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", priceToBook: int = 3, peRatio: int =  3, csv_type: str = "cad_tickers"):
     stock_df = pd.read_csv(csv_url)
     cheap_stonks = stock_df[(stock_df["priceToBook"] < priceToBook) & (stock_df["peRatio"] < peRatio)]
-    cheap_stonks = cheap_stonks[(cheap_stonks["priceToBook"] > -priceToBook) & (cheap_stonks["peRatio"] > peRatio)]
+    cheap_stonks = cheap_stonks[(cheap_stonks["priceToBook"] > -0.5) & (cheap_stonks["peRatio"] > -0.5)]
     return cheap_stonks
 
 # get stonks with low market cap
 def get_penny_stonks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", csv_type: str = "cad_tickers"):
     stock_df = pd.read_csv(csv_url)
-    low_mc_df = stock_df[stock_df["MarketCap"] < 2E8]
+    low_mc_df = stock_df[stock_df["MarketCap"] < 1E8]
     return low_mc_df
 
+def millify(n):
+    millnames = ['',' Thousand',' Million',' Billion',' Trillion']
+    n = float(n)
+    millidx = max(0,min(len(millnames)-1,
+                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+
+    return '{:.0f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
+
 def get_row_for_stonk(stock_df: pd.DataFrame, symbol: str = "KGEIF:US", csv_type: str = "cad_tickers"):
-    kei_df = stock_df[stock_df["symbol"] == symbol]
-    return kei_df
+    df_row = stock_df[stock_df["symbol"] == symbol]
+    return df_row
 
 def get_recent_fauna_news(hour_diff = 2)-> List[dict]:
     """
@@ -56,30 +65,6 @@ def get_recent_fauna_news(hour_diff = 2)-> List[dict]:
     return all_docs_ts.get("data", [])
 
     # [{'data': {'source': 'fin_news_nlp/yahoo_usd_tickers_news', 'url': 'https://ca.finance.yahoo.com/news/why-teck-resources-stock-climbed-204500796.html', 'description': 'Here’s why Teck Resources stock just posted its best quarterly gains in the last five years. The post Why Teck Resources Stock Climbed 44% in Q1 appeared first on The Motley Fool Canada.', 'country': 'USD', 'title': 'The Motley Fool - Why Teck Resources Stock Climbed 44% in Q1', 'company': 'TECH-A.TO', 'unspected': 'fail'}}]
-
-
-def ex_to_yahoo_ex(row: pd.Series) -> str:
-    """
-    Parameters:
-        ticker: ticker from pandas dataframe from cad_tickers
-        exchange: what exchange the ticker is for
-    Returns:
-    """
-    ticker = str(row["symbol"])
-    exchange = row["exShortName"]
-    if exchange == "CSE":
-        # strip :CNX from symbol
-        ticker = ticker.replace(":CNX", "")
-    # Missing a exchange code
-    if exchange in ["OTCPK", "NYSE", "NASDAQ", "NYE", "NCM", "NSM", "NGS"]:
-        ticker = ticker.replace(":US", "")
-    ticker = ticker.replace(":US", "")
-    # 1min, 5min, 15min, 30min, 60min, daily, weekly, monthly
-    switcher = {"TSXV": "V", "TSX": "TO", "CSE": "CN"}
-    yahoo_ex = switcher.get(exchange, None)
-    if yahoo_ex is not None:
-        return f"{ticker}.{yahoo_ex}"
-    return ticker
 
 def post_webhook_content(url, data: dict):
     try:
@@ -111,7 +96,12 @@ def yahoo_ex_remove(yahoo_ex: str) -> str:
     if "." in yahoo_ex:
         [ticker, ex] = yahoo_ex.split(".")
 
-        if ex in ["TO", "CSE", "V", "CN", "TSX", "TSXV"]:
+        # CNX stonks treated differently
+        if ex in ["CSE", "CN"]:
+            return f"{ticker}:CNX"
+
+        # for webmoney should be no extension
+        if ex in ["TO", "V", "TSX", "TSXV"]:
             return ticker
     return yahoo_ex
 
@@ -158,7 +148,7 @@ def check_fauna_new_for_reccomendations(cfg: dict, fauna_news: List[dict] = []):
     subset_stonks = subset_stock_df.append(small_cap_stonks).drop_duplicates(subset=["symbol"])
     # iterate across fauna_news and check if the news is about a cheap stock
     embeds = []
-    for item in fauna_news:
+    for item in tqdm(fauna_news):
         # get the company
         company = item.get("data").get("company")
         if company is None:
@@ -177,7 +167,11 @@ def check_fauna_new_for_reccomendations(cfg: dict, fauna_news: List[dict] = []):
             "inline": True
         }, {
             "name": "marketCap",
-            "value": str(row["marketCap"].iloc[0]),
+            "value": millify(row["MarketCap"].iloc[0]),
+            "inline": True
+        }, {
+            "name": "industry",
+            "value": str(row["industry"].iloc[0]),
             "inline": True
         }]
         embed = map_article_to_embed(item, fields)
@@ -205,7 +199,7 @@ def check_for_earnings(items: List[dict]):
     nlp.add_pipe("spacytextblob")
     subset_stock_df = get_cheap_stocks()
     embeds_to_sent = []
-    for item in items:
+    for item in tqdm(items):
         doc = nlp(item["data"]["title"])
         extracted_date = None
         extracted_title = item["data"]["title"]
@@ -214,8 +208,6 @@ def check_for_earnings(items: List[dict]):
         pattern = re.compile(r'\b(?:' + '|'.join(re.escape(s) for s in multiword_list) + r')\b')
         matches = pattern.findall(extracted_title.lower())
         if len(matches) > 0:
-            print(matches)
-            print(extracted_title)
             continue
         for ent in doc.ents:
             # ignore "dates" if they can be parsed as a number
@@ -256,9 +248,13 @@ def check_for_earnings(items: List[dict]):
                 "inline": True
             }, {
                 "name": "marketCap",
-                "value": str(row["MarketCap"].iloc[0]),
+                "value": millify(row["MarketCap"].iloc[0]),
                 "inline": True
-            }]
+            },  {
+            "name": "industry",
+            "value": str(row["industry"].iloc[0]),
+            "inline": True
+        }]
             embed = map_article_to_embed(item, fields)
             embeds_to_sent.append(embed)
             extracted_date = None
@@ -268,7 +264,7 @@ def check_for_earnings(items: List[dict]):
                     "username": "reccomendation-engine/earnings",
                     "embeds": embeds_to_sent
                 }
-                discord_url = os.getenv("DISCORD_CRITICAL_WEBHOOK")
+                discord_url = os.getenv("DISCORD_WEBHOOK")
                 post_webhook_content(discord_url,  data)
                 embeds_to_sent = []
             continue
@@ -277,15 +273,38 @@ def check_for_earnings(items: List[dict]):
             "username": "reccomendation-engine/earnings",
             "embeds": embeds_to_sent
         }
-        discord_url = os.getenv("DISCORD_CRITICAL_WEBHOOK")
+        discord_url = os.getenv("DISCORD_WEBHOOK")
         post_webhook_content(discord_url,  data)
         embeds_to_sent = [] 
 
 if __name__ == "__main__":
-    fauna_news = get_recent_fauna_news(2)
+    unseen_fauna_news = []
+    unseen_urls = []
+    # open urls.txt if it exists
+    if os.path.isfile("data/urls.txt"):
+        with open("data/urls.txt", "r", encoding="utf-8") as f:
+            urls = f.readlines()
+            # strip newlines from urls
+            urls = [url.strip() for url in urls]
+    else:
+        urls = []
+    # fetch all news in the last weak
+    fauna_news = get_recent_fauna_news(1*60*7)
+    # append list of all urls in fauna news to a file called urls.txt
+    for item in fauna_news:
+        url = item["data"]["url"]
+        if url not in urls:
+            urls.append(url)
+            unseen_urls.append(url)
+            unseen_fauna_news.append(item)
+    with open("data/urls.txt", "a", encoding="utf-8") as f:
+        for url in unseen_urls:
+            if url is None or url != "":
+                f.write(url + "\n")
+
     check_fauna_new_for_reccomendations({
         "hour_diff": 2
-    }, fauna_news)
+    }, unseen_fauna_news)
 
     # check for earnings
-
+    check_for_earnings(unseen_fauna_news)

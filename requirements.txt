@@ -4,3 +4,4 @@ faunadb
 dateparser
 spacy
 spacytextblob
+tqdm

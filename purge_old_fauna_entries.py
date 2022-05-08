@@ -6,8 +6,13 @@ FAUNA_SECRET = os.getenv("FAUNA_SECRET")
 if FAUNA_SECRET is None:
     raise ValueError("FAUNA_SECRET environment variable not set")
 fClient = client.FaunaClient(FAUNA_SECRET, domain="db.us.fauna.com")
-past_date = datetime.strptime("12/02/22", '%d/%m/%y')
-current_date = datetime.strptime("09/04/22", '%d/%m/%y')
+# get current date in dd/mm/yyyy format 
+today = datetime.today().strftime("%d/%m/%Y")
+# current date minus 7 days
+five_days_ago = (datetime.today() - timedelta(days=5)).strftime("%d/%m/%y")
+thirty_days_ago = (datetime.today() - timedelta(days=30)).strftime("%d/%m/%y")
+past_date = datetime.strptime(thirty_days_ago, '%d/%m/%y')
+current_date = datetime.strptime(five_days_ago, '%d/%m/%y')
 current_iso_date = current_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 past_iso_date = past_date.strftime('%Y-%m-%dT%H:%M:%SZ')
 all_docs_ts = fClient.query(q.map_(
