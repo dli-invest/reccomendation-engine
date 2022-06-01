@@ -94,7 +94,11 @@ def yahoo_ex_remove(yahoo_ex: str) -> str:
     if yahoo_ex is None:
         return yahoo_ex
     if "." in yahoo_ex:
-        [ticker, ex] = yahoo_ex.split(".")
+        try:
+            [ticker, ex] = yahoo_ex.split(".")
+        except Exception as e:
+            ticker = yahoo_ex.split(".")[0]
+            ex = yahoo_ex.split(".")[-1]
 
         # CNX stonks treated differently
         if ex in ["CSE", "CN"]:
