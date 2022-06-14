@@ -21,16 +21,16 @@ from faunadb import client, query as q
 # TODO add unit testing when it makes sense
 # and we have seen the performance of this function
 # https://raw.githubusercontent.com/dli-invest/eod_tickers/main/data/us_stock_data.csv
-def get_cheap_stocks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", priceToBook: int = 3, peRatio: int =  3, csv_type: str = "cad_tickers"):
+def get_cheap_stocks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", priceToBook: int = 2, peRatio: int =  2, csv_type: str = "cad_tickers"):
     stock_df = pd.read_csv(csv_url)
     cheap_stonks = stock_df[(stock_df["priceToBook"] < priceToBook) & (stock_df["peRatio"] < peRatio)]
-    cheap_stonks = cheap_stonks[(cheap_stonks["priceToBook"] > -0.5) & (cheap_stonks["peRatio"] > -0.5)]
+    cheap_stonks = cheap_stonks[(cheap_stonks["priceToBook"] > 0) & (cheap_stonks["peRatio"] > 0)]
     return cheap_stonks
 
 # get stonks with low market cap
 def get_penny_stonks(csv_url: str = "https://raw.githubusercontent.com/FriendlyUser/cad_tickers_list/main/static/latest/stocks.csv", csv_type: str = "cad_tickers"):
     stock_df = pd.read_csv(csv_url)
-    low_mc_df = stock_df[stock_df["MarketCap"] < 1E8]
+    low_mc_df = stock_df[stock_df["MarketCap"] < 50E7]
     return low_mc_df
 
 def millify(n):
