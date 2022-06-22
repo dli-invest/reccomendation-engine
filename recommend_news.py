@@ -152,7 +152,17 @@ def check_fauna_new_for_reccomendations(cfg: dict, fauna_news: List[dict] = []):
     subset_stonks = subset_stock_df.append(small_cap_stonks).drop_duplicates(subset=["symbol"])
     # iterate across fauna_news and check if the news is about a cheap stock
     embeds = []
-    for item in tqdm(fauna_news):
+
+    clean_fauna_news = []
+    # remove fauna news containing Zacks or Motley
+    for fauna_item in fauna_news:
+        article = fauna_item.get("data", {})
+        if "Motley" in article["title"] or "Zacks" in article["title"]:
+            continue
+        clean_fauna_news.append(fauna_item)
+    
+    # remove fauna_news that matches string
+    for item in tqdm(clean_fauna_news):
         # get the company
         company = item.get("data").get("company")
         if company is None:
