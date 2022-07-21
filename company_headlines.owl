@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xml:base="http://www.grandfleet.eu.org/ontologies/2022/7/company_headlines"
+         xmlns="http://www.grandfleet.eu.org/ontologies/2022/7/company_headlines#">
+
+<owl:Ontology rdf:about="http://www.grandfleet.eu.org/ontologies/2022/7/company_headlines"/>
+
+<owl:Class rdf:about="#buy">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#takeover">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#take_over">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#purchase">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#acquire">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+  <owl:equivalentClass rdf:resource="#buy"/>
+  <owl:equivalentClass rdf:resource="#take_over"/>
+  <owl:equivalentClass rdf:resource="#purchase"/>
+  <owl:equivalentClass rdf:resource="#takeover"/>
+</owl:Class>
+
+
+</rdf:RDF>
