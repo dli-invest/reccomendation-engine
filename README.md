@@ -7,6 +7,16 @@ fauna db is the file that stores all the ai data coming from my cron jobs (thank
 /home/codespace/.deno/bin/deno run --allow-env --allow-net --allow-read fauna.ts
 ```
 
+## Ontology installing
+
+```
+python -m spacy download en_core_web_trf
+python -m spacy download en_core_web_lg
+python -m coreferee install en
+```
+
+See https://github.com/explosion/holmes-extractor#12-installation for more details
+
 ## Fields
 
 * source (dli_invest)
