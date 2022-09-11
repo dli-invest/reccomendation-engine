@@ -37,7 +37,7 @@ def get_recent_fauna_news(hour_diff = 2)-> [dict]:
     return all_docs_ts.get("data", [])
 
 
-fauna_news = get_recent_fauna_news(1000)
+fauna_news = get_recent_fauna_news(5000)
 
 # split by country=USD and country=cad and count number of entries for both
 usd_news = [x for x in fauna_news if x.get("data", {}).get("country", "") == "USD"]
@@ -46,6 +46,8 @@ cad_news = [x for x in fauna_news if x.get("data", {}).get("country", "") == "CA
 print("TOTAL USD NEWS: ", len(fauna_news))
 print("US", len(usd_news))
 print("CAD", len(cad_news))
+
+# output 
 
 
 # delete all old entries

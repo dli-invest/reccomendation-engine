@@ -225,6 +225,7 @@ def check_for_earnings(items: List[dict]):
             continue
         for ent in doc.ents:
             # ignore "dates" if they can be parsed as a number
+            # redo this to use earnings events, might not need this if I have nuked the us tickers
             if ent.label_ == "DATE":
                 try:
                     if ent.text.lower() in ["today", "tomorrow", "yesterday", "decade", "40-year", "friday", "thursday", "wednesday", "tuesday", "monday", "sunday", "saturday", "january", "February", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december", "last year", "next week's", "week", "-", "zacks", "roadshow", "participate", "convention"]:
