@@ -323,3 +323,12 @@ if __name__ == "__main__":
 
     # check for earnings
     check_for_earnings(unseen_fauna_news)
+
+    # get data property from each document in fauna_data
+    formatted_data = [doc["data"] for doc in fauna_news]
+    new_csv = pd.DataFrame.from_records(formatted_data)
+    # save as csv file under ref with date
+    new_csv.to_csv(f"ref/training/{datetime.now().strftime('%Y-%m-%d')}.csv", index=False)
+    
+
+

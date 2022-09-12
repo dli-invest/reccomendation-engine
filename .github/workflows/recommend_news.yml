@@ -40,7 +40,7 @@ jobs:
           then
             echo "tree is clean"
           else
-            git add . || true
+            git add .txt || true
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             echo "tree is dirty, please commit changes before running this"
