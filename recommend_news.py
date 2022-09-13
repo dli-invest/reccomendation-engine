@@ -329,6 +329,4 @@ if __name__ == "__main__":
     new_csv = pd.DataFrame.from_records(formatted_data)
     # save as csv file under ref with date
     new_csv.to_csv(f"ref/training/{datetime.now().strftime('%Y-%m-%d')}.csv", index=False)
-    
-
 
