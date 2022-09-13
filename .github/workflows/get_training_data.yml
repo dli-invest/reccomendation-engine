@@ -9,7 +9,7 @@ on:
       - ".github/workflows/*.yml"
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron:  '10 10 * * 7'
+    - cron:  '10 10 * * 6'
 
 env:
   FAUNA_SECRET: ${{ secrets.FAUNA_AI_ACCESS_TOKEN }}
@@ -40,7 +40,7 @@ jobs:
           then
             echo "tree is clean"
           else
-            git add .txt || true
+            git add .txt .csv || true
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             echo "tree is dirty, please commit changes before running this"
