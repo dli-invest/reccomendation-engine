@@ -19,7 +19,7 @@ env:
 jobs:
   scrap_data:
     runs-on: ubuntu-latest
-    name: beneath
+    name: get_data
 
     steps:
       - uses: actions/checkout@v2
@@ -41,6 +41,7 @@ jobs:
             echo "tree is clean"
           else
             git add .txt .csv || true
+            git add .
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             echo "tree is dirty, please commit changes before running this"
