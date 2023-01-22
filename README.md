@@ -100,4 +100,4 @@ https://github.com/dli-invest/reccomendation-engine/compare/b45d711bb35ad3a39de1
 
 in order to compare and see if I made any code changes, I used the built in github functionality.
 
-See more projects at friendlyuser.github.io
+See more projects at friendlyuser.github.io or dli-invest.github.io
