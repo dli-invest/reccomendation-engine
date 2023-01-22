@@ -91,3 +91,13 @@ type Query {
 ```
 
 
+
+## References 
+
+Random nonsense
+
+https://github.com/dli-invest/reccomendation-engine/compare/b45d711bb35ad3a39de102cf9d0bec4f37d0238e...main
+
+in order to compare and see if I made any code changes, I used the built in github functionality.
+
+See more projects at friendlyuser.github.io
