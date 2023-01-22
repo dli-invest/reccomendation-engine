@@ -271,8 +271,6 @@ async function queryFauna(
     throw new Error("environment variable FAUNA_SECRET not set");
   }
   try {
-    // Make a POST request to fauna's graphql endpoint with body being
-    // the query and its variables.
     const res = await fetch("https://graphql.us.fauna.com/graphql", {
       method: "POST",
       headers: {
