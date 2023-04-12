@@ -19,7 +19,7 @@ env:
 jobs:
   scrap_data:
     runs-on: ubuntu-latest
-    name: beneath
+    name: test
 
     steps:
       - uses: actions/checkout@v2
