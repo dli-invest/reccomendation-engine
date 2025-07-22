@@ -7,9 +7,7 @@ on:
       - "feature/*"
     paths-ignore:
       - ".github/workflows/*.yml"
-  schedule:
-    # * is a special character in YAML so you have to quote this string
-    - cron:  '10 10 * * 6'
+
 
 env:
   FAUNA_SECRET: ${{ secrets.FAUNA_AI_ACCESS_TOKEN }}
